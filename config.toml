@@ -1,8 +1,21 @@
 process_name = "fake_students"
 worker = 10
-chunk_size = 2_000
-query = """
-INSERT INTO...
-diako"""
-values = "(number,name,..."
+chunk_size2 = 2_000
+
+# number of requested fake rows
+rows = 1_000_000
+
+# two file after running will be generated, logs and summary. out_errors_fake_students_220709235010.log & out_summary_fake_students_220709235010.txt
 output_prefix = "out_"
+
+[database]
+type = "mysql"
+dsn = "user:password@tcp(127.001:3306)/school"
+
+[query]
+insert_clause = """
+INSERT INTO...
+students"""
+values_clause = "(number,name,..."
+
+

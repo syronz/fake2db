@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"fmt"
 	"log"
@@ -11,17 +12,23 @@ import (
 var configFile = flag.String("config", "config.toml", "path to config file, default is config.toml")
 
 type Config struct {
-	ProcessName  string `toml:"process_name"`
-	Worker       int    `toml:"worker"`
-	ChunkSize    int    `toml:"chunk_size"`
-	Query        string `toml:"query"`
-	Values       string `toml:"values"`
-	OutputPrefix string `toml:"output_prefix"`
+	ProcessName  string
+	Worker       int
+	ChunkSize    int
+	Rows         int
+	OutputPrefix string
+	Database     struct {
+		Type string
+		DSN  string
+	}
+	Query struct {
+		InsertClause string
+		ValuesClause string
+	}
 }
 
 func main() {
 	flag.Parse()
-	fmt.Println("hello", *configFile)
 
 	var config Config
 
@@ -29,6 +36,17 @@ func main() {
 		log.Fatal("failed in decoding the toml file for terms", err)
 	}
 
-	fmt.Println(">>>>>", config)
+	db, err := sql.Open(config.Database.Type, config.Database.DSN)
+	if err != nil {
+		log.Fatalln("error in opening database", err)
+	}
+	defer func(db *sql.DB) {
+		err := db.Close()
+		if err != nil {
+			log.Fatalln("error in closing database gracefully", err)
+		}
+	}(db)
+
+	fmt.Println(">>>>>", config.Database.DSN, config.Rows)
 
 }
