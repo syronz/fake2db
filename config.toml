@@ -1,0 +1,8 @@
+process_name = "fake_students"
+worker = 10
+chunk_size = 2_000
+query = """
+INSERT INTO...
+diako"""
+values = "(number,name,..."
+output_prefix = "out_"
