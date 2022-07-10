@@ -11,16 +11,15 @@ type = "mysql"
 dsn = "user:password@tcp(127.0.0.1:3306)/school"
 
 [query]
-insert_clause = "INSERT INTO students(first_name, last_name, gender, code, dob, address, created_at)"
+insert_clause = "INSERT INTO students(name, gender, code, dob, address, created_at)"
 values_clause = """
 VALUES(
-'_PERSON_FIRST_NAME_',
-'_PERSON_LAST_NAME_',
-'_ENUM(male,female,other)_',
-_INT(100,999)_,
-'_DATE(1950-01-01,2010-01-01)_',
-'_ADDRESS_',
-'_DATETIME(2020-01-01 00:00:00,2022-07-10 23:59:59)')
+'__PERSON_FIRST_NAME__ __PERSON_LAST_NAME__',
+'__ENUM(male,female,other)__',
+'__INT(100,999)__',
+'__DATE(1950-01-01,2010-01-01)__',
+'__ADDRESS__',
+'__DATETIME(2020-01-01 00:00:00,2022-07-10 23:59:59)__')
 """
 
 

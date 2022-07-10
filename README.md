@@ -8,8 +8,7 @@ Below table in mysql is used as a sample
 ```sql
 CREATE TABLE students (
     id BIGINT UNSIGNED AUTO_INCREMENT,
-    first_name VARCHAR(255) NOT NULL,
-    last_name VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
     gender ENUM('male', 'female', 'other'),
     code INT,
     dob DATE,
