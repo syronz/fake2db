@@ -11,9 +11,9 @@ CREATE TABLE students (
     first_name VARCHAR(255) NOT NULL,
     last_name VARCHAR(255) NOT NULL,
     gender ENUM('male', 'female', 'other'),
-    age INT,
+    code INT,
     dob DATE,
-    description TEXT,
+    address TEXT,
     created_at DATETIME,
     PRIMARY KEY (id)
 );

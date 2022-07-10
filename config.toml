@@ -1,3 +1,4 @@
+# two file after running will be generated, logs and summary. out_errors_fake_students_220709235010.log & out_summary_fake_students_220709235010.txt
 process_name = "fake_students"
 worker = 10
 chunk_size2 = 2_000
@@ -5,17 +6,21 @@ chunk_size2 = 2_000
 # number of requested fake rows
 rows = 1_000_000
 
-# two file after running will be generated, logs and summary. out_errors_fake_students_220709235010.log & out_summary_fake_students_220709235010.txt
-output_prefix = "out_"
-
 [database]
 type = "mysql"
-dsn = "user:password@tcp(127.001:3306)/school"
+dsn = "user:password@tcp(127.0.0.1:3306)/school"
 
 [query]
-insert_clause = """
-INSERT INTO...
-students"""
-values_clause = "(number,name,..."
+insert_clause = "INSERT INTO students(first_name, last_name, gender, code, dob, address, created_at)"
+values_clause = """
+VALUES(
+'_PERSON_FIRST_NAME_',
+'_PERSON_LAST_NAME_',
+'_ENUM(male,female,other)_',
+_INT(100,999)_,
+'_DATE(1950-01-01,2010-01-01)_',
+'_ADDRESS_',
+'_DATETIME(2020-01-01 00:00:00,2022-07-10 23:59:59)')
+"""
 
 
