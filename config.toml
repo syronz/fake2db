@@ -10,16 +10,17 @@ rows = 1_000_000
 type = "mysql"
 dsn = "user:password@tcp(127.0.0.1:3306)/school"
 
+# all values should be between quotation,
 [query]
 insert_clause = "INSERT INTO students(name, gender, code, dob, address, created_at)"
 values_clause = """
 VALUES(
-'__PERSON_FIRST_NAME__ __PERSON_LAST_NAME__',
-'__ENUM(male,female,other)__',
-'__INT(100,999)__',
-'__DATE(1950-01-01,2010-01-01)__',
-'__ADDRESS__',
-'__DATETIME(2020-01-01 00:00:00,2022-07-10 23:59:59)__')
+'__FIRST_NAME__ __LAST_NAME__',
+'__RANDOM_STRING(male,female,other)__',
+'__NUMBER(100,999)__',
+'__DATE_RANGE(1950-01-01,2010-01-01)__',
+'__CITY__ __ZIP__, __STREET_NAME__ __STREET_NUMBER__',
+'__DATE__')
 """
 
 

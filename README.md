@@ -2,7 +2,12 @@
 Create fake data and bulk insert it into the database
 
 
-## sample table 
+
+## Dependency
+For generating fake data using below package
+[https://github.com/brianvoe/gofakeit](https://github.com/brianvoe/gofakeit)
+
+## sample table
 Below table in mysql is used as a sample
 
 ```sql

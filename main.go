@@ -10,7 +10,6 @@ import (
 
 	"github.com/BurntSushi/toml"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/shirou/gopsutil/load"
 )
 
 var configFile = flag.String("config", "config.toml", "path to config file, default is config.toml")
@@ -26,8 +25,8 @@ type Config struct {
 		DSN  string
 	}
 	Query struct {
-		InsertClause string
-		ValuesClause string
+		InsertClause string `toml:"insert_clause"`
+		ValuesClause string `toml:"values_clause"`
 	}
 }
 
@@ -40,13 +39,15 @@ func main() {
 		log.Fatal("failed in decoding the toml file for terms", err)
 	}
 
-	loadAvg, _ := load.Avg()
-	fmt.Println(" 1 min ave:", loadAvg.Load1)
-	fmt.Println(" 5 min ave:", loadAvg.Load5)
-	fmt.Println("15 min ave:", loadAvg.Load15)
+	//loadAvg, _ := load.Avg()
+	//fmt.Println(" 1 min ave:", loadAvg.Load1)
+	//fmt.Println(" 5 min ave:", loadAvg.Load5)
+	//fmt.Println("15 min ave:", loadAvg.Load15)
 
-	fakeFactory, _ := fake.NewFactory("dummy string")
-	fmt.Println(">>>>>>> fakerFactory", fakeFactory())
+	fakeFactory, _ := fake.NewFactory(config.Query.ValuesClause)
+	for i := 0; i < 1000; i++ {
+		fmt.Printf(">>>>>>> fakerFactory %v - %+v\n", i, fakeFactory())
+	}
 
 	db, err := sql.Open(config.Database.Type, config.Database.DSN)
 	if err != nil {
