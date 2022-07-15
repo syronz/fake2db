@@ -1,6 +1,7 @@
-# fake2db
-Create fake data and bulk insert it into the database
+# Fake2DB
+[![Go Report Card](https://goreportcard.com/badge/github.com/syronz/fake2db)](https://goreportcard.com/report/github.com/syronz/fake2db)
 
+Create fake data and bulk insert it into the database
 
 
 ## Dependency

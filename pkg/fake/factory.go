@@ -15,7 +15,9 @@ type FuncList struct {
 	Args   []string
 }
 
-// ValueClauseToQuestionMark convert ('message','23','2022-11-15') to (?,?,?)
+// ValueClauseToQuestionMark parse config.query.values_clause for generating list of question marks for instance it
+// converts ('message','23','2022-11-15') to (?,?,?)
+// The output will be used inside statements, for bulk insertion.
 func ValueClauseToQuestionMark(valueClause string) string {
 	if len(valueClause) == 0 {
 		return ""
@@ -28,6 +30,8 @@ func ValueClauseToQuestionMark(valueClause string) string {
 	return "(" + strings.Repeat("?,", count)[0:count*2-1] + ")"
 }
 
+// NewFactory parse config.query.values_clause to find columns and send proper data for each column for extracting
+// mapped function
 func NewFactory(valueClause string) (Factory, error) {
 	re := regexp.MustCompile(`'[0-9A-Za-z_(),-:\s]*'`)
 	matches := re.FindAllString(valueClause, -1)
@@ -103,6 +107,8 @@ func extractRandomPatterns(pattern string) ([]RandomPattern, string, error) {
 	return randomPatterns, format, nil
 }
 
+// NewFaker find requested RandomFunc based on registered keywords that start with __, for instance it maps
+// FirstName to __FIRST_NAME__ for generating random person's first name
 func NewFaker(phrase string) (RandomFunc, error) {
 
 	randomPatterns, format, _ := extractRandomPatterns(phrase)

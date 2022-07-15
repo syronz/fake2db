@@ -4,12 +4,13 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
-	"github.com/syronz/fake2db/pkg/fake"
 	"log"
 	"time"
 
 	"github.com/BurntSushi/toml"
 	_ "github.com/go-sql-driver/mysql"
+
+	"github.com/syronz/fake2db/pkg/fake"
 )
 
 var configFile = flag.String("config", "config.toml", "path to config file, default is config.toml")
