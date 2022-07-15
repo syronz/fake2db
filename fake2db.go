@@ -115,10 +115,12 @@ func main() {
 				log.Fatalln("error in executing the query", err)
 			}*/
 
+			allRandoms := make([]string, config.Rows-1)
 			for i := 0; i < config.Rows-1; i++ {
-				query.WriteString(fakeFactory() + ",")
+				allRandoms[i] = fakeFactory()
 			}
-			query.WriteString(fakeFactory())
+
+			query.WriteString(strings.Join(allRandoms, ","))
 
 			_, err = db.Exec(query.String())
 			if err != nil {
