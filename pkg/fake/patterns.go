@@ -1,10 +1,12 @@
 package fake
 
 import (
-	"fake2db/pkg"
-	"github.com/brianvoe/gofakeit/v6"
+	"log"
 	"strconv"
 	"time"
+
+	"github.com/brianvoe/gofakeit/v6"
+	"github.com/syronz/fake2db/pkg"
 )
 
 var Patterns map[string]Faker
@@ -45,14 +47,13 @@ func (b *Bridge) Number(args ...string) string {
 	var err error
 	if len(args) == 2 {
 		if min, err = strconv.Atoi(args[0]); err != nil {
-			min = pkg.MinNumber
+			log.Fatalln("first argument in __NUMBER__ is wrong", err)
 		}
 		if max, err = strconv.Atoi(args[1]); err != nil {
-			max = pkg.MaxNumber
+			log.Fatalln("second argument in __NUMBER__ is wrong", err)
 		}
 	} else {
-		min = pkg.MinNumber
-		max = pkg.MaxNumber
+		log.Fatalln("__NUMBER__ needs two argument")
 	}
 
 	return strconv.Itoa(gofakeit.Number(min, max))
@@ -68,14 +69,13 @@ func dateGenerator(args ...string) time.Time {
 	var err error
 	if len(args) == 2 {
 		if start, err = time.Parse(pkg.DateLayout, args[0]); err != nil {
-			start = pkg.MinDate
+			log.Fatalln("first argument in __DATE_RANGE__ is wrong", err)
 		}
 		if end, err = time.Parse(pkg.DateLayout, args[1]); err != nil {
-			end = pkg.MaxDate
+			log.Fatalln("second argument in __DATE_RANGE__ is wrong", err)
 		}
 	} else {
-		start = pkg.MinDate
-		end = pkg.MaxDate
+		log.Fatalln("__DATE_RANGE__ needs two argument")
 	}
 
 	return gofakeit.DateRange(start, end)

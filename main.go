@@ -2,9 +2,9 @@ package main
 
 import (
 	"database/sql"
-	"fake2db/pkg/fake"
 	"flag"
 	"fmt"
+	"github.com/syronz/fake2db/pkg/fake"
 	"log"
 	"time"
 
@@ -21,8 +21,14 @@ type Config struct {
 	Rows         int
 	OutputPrefix string
 	Database     struct {
-		Type string
-		DSN  string
+		Source struct {
+			Type string
+			DSN  string
+		}
+		Destination struct {
+			Type string
+			DSN  string
+		}
 	}
 	Query struct {
 		InsertClause string `toml:"insert_clause"`
@@ -49,7 +55,7 @@ func main() {
 		fmt.Printf(">>>>>>> fakerFactory %v - %+v\n", i, fakeFactory())
 	}
 
-	db, err := sql.Open(config.Database.Type, config.Database.DSN)
+	db, err := sql.Open(config.Database.Source.Type, config.Database.Source.DSN)
 	if err != nil {
 		log.Fatalln("error in opening database", err)
 	}
@@ -60,7 +66,7 @@ func main() {
 		}
 	}(db)
 
-	fmt.Println(">>>>>", config.Database.DSN, config.Rows)
+	fmt.Println(">>>>>", config.Database.Source.DSN, config.Rows)
 
 	start := time.Now()
 	for i := 0; i < 10000; i++ {

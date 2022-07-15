@@ -6,7 +6,13 @@ chunk_size2 = 2_000
 # number of requested fake rows
 rows = 1_000_000
 
-[database]
+# source database for getting ids in case we have foreign keys
+[database.source]
+type = "mysql"
+dsn = "user:password@tcp(127.0.0.1:3306)/school"
+
+# save data
+[database.destination]
 type = "mysql"
 dsn = "user:password@tcp(127.0.0.1:3306)/school"
 
@@ -18,7 +24,7 @@ VALUES(
 '__FIRST_NAME__ __LAST_NAME__',
 '__RANDOM_STRING(male,female,other)__',
 '__NUMBER(100,999)__',
-'__DATE_RANGE(1950-01-01,2010-01-01)__',
+'__DATE_RANGE(2000-01-01 00:00:00,2010-01-01 00:00:00)__',
 '__CITY__ __ZIP__, __STREET_NAME__ __STREET_NUMBER__',
 '__DATE__')
 """

@@ -1,4 +1,4 @@
-module fake2db
+module github.com/syronz/fake2db
 
 go 1.18
 
