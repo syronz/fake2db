@@ -4,7 +4,9 @@ worker = 10
 chunk_size2 = 2_000
 
 # number of requested fake rows
-rows = 1_000_000
+#rows = 1_000_000
+rows = 20000
+
 
 # source database for getting ids in case we have foreign keys
 [database.source]
@@ -15,6 +17,20 @@ dsn = "user:password@tcp(127.0.0.1:3306)/school"
 [database.destination]
 type = "mysql"
 dsn = "user:password@tcp(127.0.0.1:3306)/school"
+pre_queries = [
+"""
+CREATE TABLE IF NOT EXIST students (
+    id BIGINT UNSIGNED AUTO_INCREMENT,
+    name VARCHAR(255) NOT NULL,
+    gender ENUM('male', 'female', 'other'),
+    code INT,
+    dob DATE,
+    address TEXT,
+    created_at DATETIME,
+    PRIMARY KEY (id)
+);
+"""
+]
 
 # all values should be between quotation,
 [query]
