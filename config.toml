@@ -5,7 +5,7 @@ chunk_size2 = 2_000
 
 # number of requested fake rows
 #rows = 1_000_000
-rows = 20000
+rows = 10000
 
 
 # source database for getting ids in case we have foreign keys

@@ -7,8 +7,8 @@ import (
 	"strings"
 )
 
-type RandomFunc func() string
-type Factory func() string
+type RandomFunc func() interface{}
+type Factory func() []interface{}
 type Faker func(args ...string) string
 type FuncList struct {
 	Method Faker
@@ -47,14 +47,14 @@ func NewFactory(valueClause string) (Factory, error) {
 		funcList = append(funcList, fn)
 	}
 
-	return func() string {
-		var result []string
+	return func() []interface{} {
+		var result []interface{}
 
 		for _, fn := range funcList {
 			result = append(result, fn())
 		}
 
-		return "('" + strings.Join(result, "','") + "')"
+		return result
 	}, nil
 }
 
@@ -113,7 +113,7 @@ func NewFaker(phrase string) (RandomFunc, error) {
 
 	randomPatterns, format, _ := extractRandomPatterns(phrase)
 
-	return func() string {
+	return func() interface{} {
 		var randoms []interface{}
 
 		for _, v := range randomPatterns {
