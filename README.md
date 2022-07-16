@@ -1,5 +1,7 @@
 # Fake2DB
 [![Go Report Card](https://goreportcard.com/badge/github.com/syronz/fake2db)](https://goreportcard.com/report/github.com/syronz/fake2db)
+[![Passing](https://github.com/syronz/fake2db/actions/workflows/go.yml/badge.svg)](https://github.com/syronz/fake2db/actions/workflows/go.yml)
+[![GoDoc](https://pkg.go.dev/badge/github.com/syronz/fake2db)](https://pkg.go.dev/github.com/syronz/fake2db)
 
 Create fake data and bulk insert it into the database
 

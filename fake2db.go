@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/BurntSushi/toml"
@@ -27,8 +28,9 @@ type Config struct {
 			DSN  string
 		}
 		Destination struct {
-			Type string
-			DSN  string
+			Type       string
+			DSN        string
+			PreQueries []string `toml:"pre_queries"`
 		}
 	}
 	Query struct {
@@ -51,34 +53,85 @@ func main() {
 	//fmt.Println(" 5 min ave:", loadAvg.Load5)
 	//fmt.Println("15 min ave:", loadAvg.Load15)
 
+	qMarks, columnCount := fake.ValueClauseToQuestionMark(config.Query.ValuesClause)
+	fmt.Println(">>>>> qmarks", qMarks, columnCount)
+
+	qArr := make([]interface{}, config.Rows*columnCount)
 	fakeFactory, _ := fake.NewFactory(config.Query.ValuesClause)
-	for i := 0; i < 1000; i++ {
-		fmt.Printf(">>>>>>> fakerFactory %v - %+v\n", i, fakeFactory())
-	}
+	fmt.Println(fakeFactory())
 
-	db, err := sql.Open(config.Database.Source.Type, config.Database.Source.DSN)
-	if err != nil {
-		log.Fatalln("error in opening database", err)
-	}
-	defer func(db *sql.DB) {
-		err := db.Close()
-		if err != nil {
-			log.Fatalln("error in closing database gracefully", err)
+	for z := 0; z < 5; z++ {
+		start := time.Now()
+
+		for i := 0; i < config.Rows; i++ {
+			row := fakeFactory()
+			for j, v := range row {
+				qArr[i*columnCount+j] = v
+			}
 		}
-	}(db)
 
-	fmt.Println(">>>>>", config.Database.Source.DSN, config.Rows)
+		db, err := sql.Open(config.Database.Source.Type, config.Database.Source.DSN)
+		if err != nil {
+			log.Fatalln("error in opening database", err)
+		}
+		defer func(db *sql.DB) {
+			err := db.Close()
+			if err != nil {
+				log.Fatalln("error in closing database gracefully", err)
+			}
+		}(db)
 
-	start := time.Now()
-	for i := 0; i < 10000; i++ {
-		query := "INSERT INTO students(first_name, last_name, gender, age, dob, description, created_at)"
-		query += "VALUES('diako', 'sharifi', 'male', 35, '1987-02-17', 'he is a programmer', '2022-07-10 00:14:45')"
-		_, err = db.Exec(query)
+		query := strings.Builder{}
+		query.WriteString("INSERT INTO students(name, gender, code, dob, address, created_at) VALUES")
+
+		/* stms approach 10k 180ms ~ 40k 720ms. query 90ms ~ 360ms
+		query.WriteString(strings.Repeat(qMarks+",", config.Rows-1))
+		query.WriteString(qMarks)
+		stmt, err := db.Prepare(query.String())
+		if err != nil {
+			log.Fatalln("error in creating stmt", err)
+		}
+		fmt.Println("query is ready: ", time.Since(start))
+		_, err = stmt.Exec(qArr...)
+		if err != nil {
+			log.Fatalln("error in executing the query", err)
+		}*/
+
+		/* 40k 550ms*/
+		var insideValues strings.Builder
+		for i := 0; i < config.Rows; i++ {
+			query.WriteRune('(')
+
+			insideValues.Reset()
+			for j := 0; j < columnCount; j++ {
+				insideValues.WriteString(fmt.Sprintf("'%v',", qArr[i*columnCount+j]))
+			}
+			query.WriteString(insideValues.String()[0 : len(insideValues.String())-1])
+			query.Write([]byte("),"))
+		}
+		fmt.Println("query is ready: ", time.Since(start))
+		_, err = db.Exec(query.String()[0 : len(query.String())-1])
 		if err != nil {
 			log.Fatalln("error in executing the query", err)
 		}
+
+		/* slow 2.7 for 20k
+		allRandoms := make([]string, config.Rows-1)
+		for i := 0; i < config.Rows-1; i++ {
+			allRandoms[i] = fakeFactory()
+		}
+
+		query.WriteString(strings.Join(allRandoms, ","))
+
+		_, err = db.Exec(query.String())
+		if err != nil {
+			log.Fatalln("error in executing the query", err)
+		}
+
+		*/
+
+		fmt.Println("duration: ", time.Since(start))
 	}
-	fmt.Println("duration: ", time.Since(start))
 
 	//start := time.Now()
 	//query := "INSERT INTO students(first_name, last_name, gender, age, dob, description, created_at)"

@@ -7,8 +7,8 @@ import (
 	"strings"
 )
 
-type RandomFunc func() string
-type Factory func() []string
+type RandomFunc func() interface{}
+type Factory func() []interface{}
 type Faker func(args ...string) string
 type FuncList struct {
 	Method Faker
@@ -18,16 +18,16 @@ type FuncList struct {
 // ValueClauseToQuestionMark parse config.query.values_clause for generating list of question marks for instance it
 // converts ('message','23','2022-11-15') to (?,?,?)
 // The output will be used inside statements, for bulk insertion.
-func ValueClauseToQuestionMark(valueClause string) string {
+func ValueClauseToQuestionMark(valueClause string) (string, int) {
 	if len(valueClause) == 0 {
-		return ""
+		return "", 0
 	}
 
 	re := regexp.MustCompile(`'\s*,\s*'`)
 	matches := re.FindAllString(valueClause, -1)
 	count := len(matches) + 1
 
-	return "(" + strings.Repeat("?,", count)[0:count*2-1] + ")"
+	return "(" + strings.Repeat("?,", count)[0:count*2-1] + ")", count
 }
 
 // NewFactory parse config.query.values_clause to find columns and send proper data for each column for extracting
@@ -47,8 +47,8 @@ func NewFactory(valueClause string) (Factory, error) {
 		funcList = append(funcList, fn)
 	}
 
-	return func() []string {
-		var result []string
+	return func() []interface{} {
+		var result []interface{}
 
 		for _, fn := range funcList {
 			result = append(result, fn())
@@ -113,7 +113,7 @@ func NewFaker(phrase string) (RandomFunc, error) {
 
 	randomPatterns, format, _ := extractRandomPatterns(phrase)
 
-	return func() string {
+	return func() interface{} {
 		var randoms []interface{}
 
 		for _, v := range randomPatterns {

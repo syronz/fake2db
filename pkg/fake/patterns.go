@@ -18,6 +18,7 @@ func init() {
 	bridge := Bridge{}
 
 	faker := gofakeit.New(0)
+	//faker := gofakeit.NewUnlocked(0)
 	gofakeit.SetGlobalFaker(faker)
 
 	Patterns["FIRST_NAME"] = bridge.FirstName
