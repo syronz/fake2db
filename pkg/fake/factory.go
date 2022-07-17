@@ -7,8 +7,8 @@ import (
 	"strings"
 )
 
-type RandomFunc func() interface{}
-type Factory func() []interface{}
+type RandomFunc func() string
+type Factory func() []string
 type Faker func(args ...string) string
 type FuncList struct {
 	Method Faker
@@ -47,8 +47,8 @@ func NewFactory(valueClause string) (Factory, error) {
 		funcList = append(funcList, fn)
 	}
 
-	return func() []interface{} {
-		var result []interface{}
+	return func() []string {
+		var result []string
 
 		for _, fn := range funcList {
 			result = append(result, fn())
@@ -87,24 +87,24 @@ func extractRandomPatterns(pattern string) ([]RandomPattern, string, error) {
 		format = strings.Replace(format, v, "%v", 1)
 	}
 
-	randomPatterns := make([]RandomPattern, len(matches))
+	fakePatterns := make([]RandomPattern, len(matches))
 
 	for i, v := range matches {
 		startArgument := strings.Index(v, "(")
 		endArgument := strings.Index(v, ")")
 		if startArgument+endArgument > 0 {
-			randomPatterns[i].RandomFunc = v[2:startArgument]
-			randomPatterns[i].Args = strings.Split(v[startArgument+1:endArgument], ",")
-			for j := range randomPatterns[i].Args {
-				randomPatterns[i].Args[j] = strings.TrimSpace(randomPatterns[i].Args[j])
+			fakePatterns[i].RandomFunc = v[2:startArgument]
+			fakePatterns[i].Args = strings.Split(v[startArgument+1:endArgument], ",")
+			for j := range fakePatterns[i].Args {
+				fakePatterns[i].Args[j] = strings.TrimSpace(fakePatterns[i].Args[j])
 			}
 		} else {
-			randomPatterns[i].RandomFunc = v[2 : len(v)-2]
-			randomPatterns[i].Args = []string{}
+			fakePatterns[i].RandomFunc = v[2 : len(v)-2]
+			fakePatterns[i].Args = []string{}
 		}
 	}
 
-	return randomPatterns, format, nil
+	return fakePatterns, format, nil
 }
 
 // NewFaker find requested RandomFunc based on registered keywords that start with __, for instance it maps
@@ -113,7 +113,7 @@ func NewFaker(phrase string) (RandomFunc, error) {
 
 	randomPatterns, format, _ := extractRandomPatterns(phrase)
 
-	return func() interface{} {
+	return func() string {
 		var randoms []interface{}
 
 		for _, v := range randomPatterns {

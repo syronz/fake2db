@@ -1,11 +1,12 @@
 # two file after running will be generated, logs and summary. out_errors_fake_students_220709235010.log & out_summary_fake_students_220709235010.txt
 process_name = "fake_students"
-worker = 10
-chunk_size2 = 2_000
+worker = 20
+chunk_size = 5_000
+#chunk_size = 3
 
 # number of requested fake rows
-#rows = 1_000_000
-rows = 10000
+rows = 1_000_0000
+#rows = 10
 
 
 # source database for getting ids in case we have foreign keys
@@ -34,15 +35,16 @@ CREATE TABLE IF NOT EXIST students (
 
 # all values should be between quotation,
 [query]
-insert_clause = "INSERT INTO students(name, gender, code, dob, address, created_at)"
+insert_clause = "INSERT INTO students(name, gender, code, dob, address, created_at) VALUES"
 values_clause = """
-VALUES(
+(
 '__FIRST_NAME__ __LAST_NAME__',
 '__RANDOM_STRING(male,female,other)__',
 '__NUMBER(100,999)__',
 '__DATE_RANGE(2000-01-01 00:00:00,2010-01-01 00:00:00)__',
 '__CITY__ __ZIP__, __STREET_NAME__ __STREET_NUMBER__',
-'__DATE__')
+'__DATE__'
+)
 """
 
 

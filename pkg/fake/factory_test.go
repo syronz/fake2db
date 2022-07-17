@@ -38,7 +38,7 @@ func TestValueClauseToQuestionMark(t *testing.T) {
 	}
 
 	for _, v := range samples {
-		r := ValueClauseToQuestionMark(v.in)
+		r, _ := ValueClauseToQuestionMark(v.in)
 		assert.Equal(t, v.out, r, v.message)
 	}
 }

@@ -1,11 +1,13 @@
 package main
 
 import (
+	"constraints"
 	"database/sql"
 	"flag"
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/BurntSushi/toml"
@@ -19,17 +21,19 @@ var configFile = flag.String("config", "config.toml", "path to config file, defa
 type Config struct {
 	ProcessName  string
 	Worker       int
-	ChunkSize    int
+	ChunkSize    int `toml:"chunk_size"`
 	Rows         int
 	OutputPrefix string
 	Database     struct {
 		Source struct {
 			Type string
 			DSN  string
+			Conn *sql.DB
 		}
 		Destination struct {
 			Type       string
 			DSN        string
+			Conn       *sql.DB
 			PreQueries []string `toml:"pre_queries"`
 		}
 	}
@@ -41,6 +45,7 @@ type Config struct {
 
 func main() {
 	flag.Parse()
+	start := time.Now()
 
 	var config Config
 
@@ -48,105 +53,88 @@ func main() {
 		log.Fatal("failed in decoding the toml file for terms", err)
 	}
 
+	if config.ChunkSize > config.Rows {
+		log.Fatalln("chunk_size is bigger than rows. it is forbidden!")
+	}
+
+	var err error
+	config.Database.Destination.Conn, err = sql.Open(config.Database.Destination.Type, config.Database.Destination.DSN)
+	if err != nil {
+		log.Fatalln("error in opening database", err)
+	}
+
+	err = config.Database.Destination.Conn.Ping()
+	if err != nil {
+		log.Fatalln("error in ping to database", err)
+	}
+
+	defer func(db *sql.DB) {
+		err := db.Close()
+		if err != nil {
+			log.Fatalln("error in closing database gracefully", err)
+		}
+	}(config.Database.Destination.Conn)
+
+	var wgConsumer, wgPublisher sync.WaitGroup
+	countCh := make(chan int, 1)
+	fakeFactory, _ := fake.NewFactory(config.Query.ValuesClause)
+
+	wgPublisher.Add(1)
+	go func(wgConsumer, wgPublisher *sync.WaitGroup, rows, chunkSize int, countCh chan int) {
+		for i := 0; i < rows; i += min(chunkSize, rows-i) {
+			fmt.Println("... find count >>>> ", i, chunkSize, rows, min(chunkSize, rows-0))
+			wgConsumer.Add(1)
+			countCh <- min(chunkSize, rows-i)
+		}
+		wgPublisher.Done()
+	}(&wgConsumer, &wgPublisher, config.Rows, config.ChunkSize, countCh)
+
+	for w := 1; w <= config.Worker; w++ {
+		go Worker(&wgConsumer, config, fakeFactory, countCh)
+	}
+
 	//loadAvg, _ := load.Avg()
 	//fmt.Println(" 1 min ave:", loadAvg.Load1)
 	//fmt.Println(" 5 min ave:", loadAvg.Load5)
 	//fmt.Println("15 min ave:", loadAvg.Load15)
 
-	qMarks, columnCount := fake.ValueClauseToQuestionMark(config.Query.ValuesClause)
-	fmt.Println(">>>>> qmarks", qMarks, columnCount)
+	wgPublisher.Wait()
+	wgConsumer.Wait()
+	fmt.Println("duration: ", time.Since(start))
 
-	qArr := make([]interface{}, config.Rows*columnCount)
-	fakeFactory, _ := fake.NewFactory(config.Query.ValuesClause)
-	fmt.Println(fakeFactory())
+}
 
-	for z := 0; z < 5; z++ {
-		start := time.Now()
+func Worker(wg *sync.WaitGroup, config Config, factory fake.Factory, countCh chan int) {
 
-		for i := 0; i < config.Rows; i++ {
-			row := fakeFactory()
-			for j, v := range row {
-				qArr[i*columnCount+j] = v
-			}
-		}
-
-		db, err := sql.Open(config.Database.Source.Type, config.Database.Source.DSN)
-		if err != nil {
-			log.Fatalln("error in opening database", err)
-		}
-		defer func(db *sql.DB) {
-			err := db.Close()
-			if err != nil {
-				log.Fatalln("error in closing database gracefully", err)
-			}
-		}(db)
-
+	for count := range countCh {
+		fmt.Println(">>>>>! 000 ", count)
 		query := strings.Builder{}
-		query.WriteString("INSERT INTO students(name, gender, code, dob, address, created_at) VALUES")
+		query.WriteString(config.Query.InsertClause)
 
-		/* stms approach 10k 180ms ~ 40k 720ms. query 90ms ~ 360ms
-		query.WriteString(strings.Repeat(qMarks+",", config.Rows-1))
-		query.WriteString(qMarks)
-		stmt, err := db.Prepare(query.String())
-		if err != nil {
-			log.Fatalln("error in creating stmt", err)
-		}
-		fmt.Println("query is ready: ", time.Since(start))
-		_, err = stmt.Exec(qArr...)
-		if err != nil {
-			log.Fatalln("error in executing the query", err)
-		}*/
-
-		/* 40k 550ms*/
 		var insideValues strings.Builder
-		for i := 0; i < config.Rows; i++ {
+		for i := 0; i < count; i++ {
 			query.WriteRune('(')
 
 			insideValues.Reset()
-			for j := 0; j < columnCount; j++ {
-				insideValues.WriteString(fmt.Sprintf("'%v',", qArr[i*columnCount+j]))
-			}
+			insideValues.WriteString(fmt.Sprintf("'%v',", strings.Join(factory(), "','")))
 			query.WriteString(insideValues.String()[0 : len(insideValues.String())-1])
-			query.Write([]byte("),"))
+			query.WriteString("),")
 		}
-		fmt.Println("query is ready: ", time.Since(start))
-		_, err = db.Exec(query.String()[0 : len(query.String())-1])
+
+		_, err := config.Database.Destination.Conn.Exec(query.String()[0 : len(query.String())-1])
+
 		if err != nil {
-			log.Fatalln("error in executing the query", err)
+			log.Println("error in executing the query", err)
+			log.Println("query: ", query.String())
 		}
-
-		/* slow 2.7 for 20k
-		allRandoms := make([]string, config.Rows-1)
-		for i := 0; i < config.Rows-1; i++ {
-			allRandoms[i] = fakeFactory()
-		}
-
-		query.WriteString(strings.Join(allRandoms, ","))
-
-		_, err = db.Exec(query.String())
-		if err != nil {
-			log.Fatalln("error in executing the query", err)
-		}
-
-		*/
-
-		fmt.Println("duration: ", time.Since(start))
+		wg.Done()
 	}
 
-	//start := time.Now()
-	//query := "INSERT INTO students(first_name, last_name, gender, age, dob, description, created_at)"
-	//query += "VALUES(?, ?, ?, ?, ?, ?, ?)"
-	//stmt, err := db.Prepare(query)
-	//if err != nil {
-	//	log.Fatalln("error in creating stmt", err)
-	//}
-	//
-	//for i := 0; i < 10000; i++ {
-	//	_, err = stmt.Exec("diako", "sharifi", "male", 35, "1987-02-17", "he is a programmer", "2022-07-10 00:14:45")
-	//	if err != nil {
-	//		log.Fatalln("error in executing the query", err)
-	//	}
-	//
-	//}
-	//fmt.Println("duration: ", time.Since(start))
+}
+
+func min[T constraints.Ordered](x, y T) T {
+	if x < y {
+		return x
+	}
+	return y
 }
