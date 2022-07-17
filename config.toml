@@ -1,18 +1,14 @@
-# two file after running will be generated, logs and summary. out_errors_fake_students_220709235010.log & out_summary_fake_students_220709235010.txt
-process_name = "fake_students"
 worker = 20
-chunk_size = 5_000
-#chunk_size = 3
+chunk_size = 50
 
 # number of requested fake rows
-rows = 1_000_0000
-#rows = 10
+rows = 1000_000
 
-
-# source database for getting ids in case we have foreign keys
-[database.source]
-type = "mysql"
-dsn = "user:password@tcp(127.0.0.1:3306)/school"
+# three random level: 1,2,3
+# level 1: Uses math/rand(Pseudo) with mutex locking
+# level 2: Uses math/rand(Pseudo) with NO mutext locking, More performant but not goroutine safe.
+# level 3: Uses crypto/rand(cryptographically secure) with mutext locking
+random_level = 1
 
 # save data
 [database.destination]
@@ -20,7 +16,7 @@ type = "mysql"
 dsn = "user:password@tcp(127.0.0.1:3306)/school"
 pre_queries = [
 """
-CREATE TABLE IF NOT EXIST students (
+CREATE TABLE IF NOT EXISTS students (
     id BIGINT UNSIGNED AUTO_INCREMENT,
     name VARCHAR(255) NOT NULL,
     gender ENUM('male', 'female', 'other'),
@@ -35,7 +31,7 @@ CREATE TABLE IF NOT EXIST students (
 
 # all values should be between quotation,
 [query]
-insert_clause = "INSERT INTO students(name, gender, code, dob, address, created_at) VALUES"
+insert_clause = "INSERT IGNORE INTO students(name, gender, code, dob, address, created_at) VALUES"
 values_clause = """
 (
 '__FIRST_NAME__ __LAST_NAME__',

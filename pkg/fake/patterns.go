@@ -1,24 +1,38 @@
 package fake
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"log"
 	"strconv"
 	"time"
 
 	"github.com/brianvoe/gofakeit/v6"
+
 	"github.com/syronz/fake2db/pkg"
+	"github.com/syronz/fake2db/pkg/config"
 )
 
 var Patterns map[string]Faker
 
 type Bridge struct{}
 
-func init() {
+func InitiatePattern(cfg config.Config) {
 	Patterns = make(map[string]Faker)
 	bridge := Bridge{}
 
-	faker := gofakeit.New(0)
-	//faker := gofakeit.NewUnlocked(0)
+	var faker *gofakeit.Faker
+	switch cfg.RandomLevel {
+	case 1:
+		faker = gofakeit.New(0)
+	case 2:
+		faker = gofakeit.NewUnlocked(0)
+	case 3:
+		faker = gofakeit.NewCrypto()
+	default:
+		log.Fatalln("random_level should be 1,2 or 3")
+	}
+
 	gofakeit.SetGlobalFaker(faker)
 
 	Patterns["FIRST_NAME"] = bridge.FirstName
@@ -31,7 +45,7 @@ func init() {
 	Patterns["ZIP"] = bridge.Zip
 	Patterns["STREET_NAME"] = bridge.StreetName
 	Patterns["STREET_NUMBER"] = bridge.StreetNumber
-	//Patterns["DATETIME"] = bridge.RandomDateTime
+	Patterns["SHA256"] = Sha256
 }
 
 // FirstName return random first name
@@ -116,6 +130,12 @@ func (b *Bridge) StreetName(args ...string) string {
 // StreetNumber returns random street number, could be combined with Zip and StreetName
 func (b *Bridge) StreetNumber(args ...string) string {
 	return gofakeit.StreetNumber()
+}
+
+// Sha256 generate hashcode based on current time
+func Sha256(args ...string) string {
+	sum := sha256.Sum256([]byte(time.Now().Format("20060102150405.000000000")))
+	return fmt.Sprintf("%x", sum)
 }
 
 //
